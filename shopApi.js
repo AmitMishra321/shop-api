@@ -63,6 +63,22 @@ app.get("/products", function (req, res) {
 })
 
 
+app.get("/products/:id", function (req, res) {
+   let id=req.params.id
+   console.log(id)
+   let sql = `select*from products where "productId"=$1`
+   console.log(sql)
+   client.query(sql,[id], function (err, result) {
+      if (err) res.status(404).send(err.message)
+      else {
+         res.send(result)
+      }
+   })
+})
+
+
+
+
 app.post("/products", function (req, res) {
    let body = req.body
    let sql = `INSERT INTO products(productName,category,description) VALUES ($1,$2,$3)`
