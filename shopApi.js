@@ -78,14 +78,11 @@ app.get("/products/:id", function (req, res) {
 
 
 
-
-app.post("/products", function (req, res) {
-   let body = req.body
-   let sql = `INSERT INTO products(productName,category,description) VALUES ($1,$2,$3)`
-   let product = [body.productName, body.category, body.description]
-
+app.post("/products", function (req, res,next) {
+   let product = Object.values(req.body)
+   let sql = `INSERT INTO products("productName","category","description") VALUES ($1,$2,$3)`
+   console.log(product)
    client.query(sql, product, function (err, result) {
-      // console.log(sql)
       if (err) res.status(404).send(err)
       else res.send(`${result.rowCount} insertion Successfully`)
    })
@@ -95,12 +92,11 @@ app.put("/products/:id", function (req, res, next) {
    let id = req.params.id;
    let body = { ...req.body, id: id }
    let value = Object.values(body)
-   const query = 'UPDATE products SET productName=$1,category=$2,description=$3 WHERE productId=$4'
+   const query = 'UPDATE products SET "productName"=$1,"category"=$2,"description"=$3 WHERE "productId"=$4'
    client.query(query, value, function (err, result) {
       if (err) res.status(400).send(err)
       else res.send(`${result.rowCount} updation successful`)
    })
-
 })
 
 
@@ -141,7 +137,7 @@ addToQuery = (search, value, name) =>
 
 app.post("/purchases", function (req, res) {
    let value = Object.values(req.body)
-   let sql = `INSERT INTO purchases(shopId,productid,quantity,price) VALUES ($1,$2,$3,$4)`
+   let sql = `INSERT INTO purchases(shopid,productid,quantity,price) VALUES ($1,$2,$3,$4)`
    client.query(sql, value, function (err, result) {
       if (err) res.status(404).send(err)
       else res.send(result)
@@ -176,7 +172,7 @@ app.get("/purchases/products/:id", function (req, res) {
 
 app.get("/totalPurchases/shops/:id",function(req,res){
    let id=req.params.id;
-   let sql=`SELECT shopId,productid, SUM(quantity), SUM(price) FROM purchases WHERE shopId=$1 GROUP BY productid`
+   let sql=`SELECT shopid,productid, SUM(quantity), SUM(price) FROM purchases WHERE shopid=$1 GROUP BY productid`
    client.query(sql,[id],function(err,result){
       if(err) res.status(400).send(err.message)
       else res.send(result)
@@ -186,9 +182,10 @@ app.get("/totalPurchases/shops/:id",function(req,res){
 
 app.get("/totalPurchases/product/:id",function(req,res){
    let id=req.params.id;
-   let sql=`SELECT shopId,productid, SUM(quantity), SUM(price) FROM purchases WHERE productid=$1 GROUP BY shopId`
+   let sql=`SELECT shopid,productid, SUM(quantity), SUM(price) FROM purchases WHERE productid=$1 GROUP BY shopid`
    client.query(sql,[id],function(err,result){
       if(err) res.status(400).send(err.message)
       else res.send(result)
    })
 })
+
