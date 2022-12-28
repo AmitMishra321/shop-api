@@ -43,7 +43,7 @@ app.get("/shops", function (req, res) {
 
 app.post("/shops", function (req, res) {
    let body = req.body
-   let sql = `INSERT INTO shops(name,rent) VALUES ($1,$2)`
+   let sql = `INSERT INTO shops("name","rent") VALUES ($1,$2)`
    let shop = [body.name, body.rent]
    client.query(sql, shop, function (err, result) {
       if (err) res.status(404).send(err)
@@ -65,9 +65,7 @@ app.get("/products", function (req, res) {
 
 app.get("/products/:id", function (req, res) {
    let id=req.params.id
-   console.log(id)
    let sql = `select*from products where "productId"=$1`
-   console.log(sql)
    client.query(sql,[id], function (err, result) {
       if (err) res.status(404).send(err.message)
       else {
@@ -81,21 +79,21 @@ app.get("/products/:id", function (req, res) {
 app.post("/products", function (req, res,next) {
    let product = Object.values(req.body)
    let sql = `INSERT INTO products("productName","category","description") VALUES ($1,$2,$3)`
-   console.log(product)
    client.query(sql, product, function (err, result) {
       if (err) res.status(404).send(err)
       else res.send(`${result.rowCount} insertion Successfully`)
    })
 })
-
+ 
 app.put("/products/:id", function (req, res, next) {
    let id = req.params.id;
-   let body = { ...req.body, id: id }
+   let body = { ...req.body, }
    let value = Object.values(body)
-   const query = 'UPDATE products SET "productName"=$1,"category"=$2,"description"=$3 WHERE "productId"=$4'
+   const query = 'UPDATE products SET "productName"=$2,"category"=$3,"description"=$4 WHERE "productId"=$1'
    client.query(query, value, function (err, result) {
-      if (err) res.status(400).send(err)
-      else res.send(`${result.rowCount} updation successful`)
+      if (err) {
+         res.status(400).send(err)
+      }else res.send(`${result.rowCount} updation successful`)
    })
 })
 
@@ -111,7 +109,6 @@ app.get("/purchases", function (req, res) {
    let search = this.makeSearchStr(shop, product)
    let final=search?' Where '+`${search} `+` ${v1}`:`${v1}`
    let sql = `SELECT*FROM purchases ${final} `
-   console.log(sql)
    client.query(sql, function (err, result) {
       if (err) res.status(404).send(err.message)
       else {
@@ -120,18 +117,20 @@ app.get("/purchases", function (req, res) {
    })
 })
 
-makeSearchStr = (shop, product) => {
-   let search = ''
-   search = addToQuery(search, shop, 'shopId')
-   search = addToQuery(search, product, 'productid')
-   return search
+   
+
+makeSearchStr = (shop='', product='') => {          
+            let search = ''
+            search = addToQuery(search, shop, 'shopid')
+            search = addToQuery(search, product, 'productid')
+            return search
 }
 
 addToQuery = (search, value, name) =>
    value ?
       search ?
-         `${search} AND ${name}=${value}`
-         : `${name}=${value}`
+         `${search} AND ${name} IN (${value})`
+         : `${name} IN (${value})`
       : search
 
 
@@ -172,7 +171,7 @@ app.get("/purchases/products/:id", function (req, res) {
 
 app.get("/totalPurchases/shops/:id",function(req,res){
    let id=req.params.id;
-   let sql=`SELECT shopid,productid, SUM(quantity), SUM(price) FROM purchases WHERE shopid=$1 GROUP BY productid`
+   let sql=`SELECT productid, SUM(quantity) FROM purchases WHERE shopid=$1 GROUP BY productid`
    client.query(sql,[id],function(err,result){
       if(err) res.status(400).send(err.message)
       else res.send(result)
@@ -182,7 +181,7 @@ app.get("/totalPurchases/shops/:id",function(req,res){
 
 app.get("/totalPurchases/product/:id",function(req,res){
    let id=req.params.id;
-   let sql=`SELECT shopid,productid, SUM(quantity), SUM(price) FROM purchases WHERE productid=$1 GROUP BY shopid`
+   let sql=`SELECT shopid, SUM(quantity) FROM purchases WHERE productid=$1 GROUP BY shopid`
    client.query(sql,[id],function(err,result){
       if(err) res.status(400).send(err.message)
       else res.send(result)
